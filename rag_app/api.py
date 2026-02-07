@@ -19,6 +19,7 @@ from rag_app.config import ensure_dirs
 from rag_app.ingest import ingest_file, save_upload
 from rag_app.models import (
     AgentResponse,
+    CompareResponse,
     DocumentListResponse,
     HealthResponse,
     IngestJobItem,
@@ -35,6 +36,7 @@ from rag_app.registry import list_documents
 from rag_app.rag import rag_search
 from rag_app.tasks import enqueue_ingest, fetch_job, get_redis_conn
 from rag_app.config import settings
+from rag_app.compare.service import compare_books
 
 
 ensure_dirs()
@@ -236,6 +238,36 @@ def search(payload: SearchRequest) -> SearchResponse:
         for src, title, doc_id, page, content in sources
     ]
     return SearchResponse(chunks=chunks)
+
+
+@app.post("/compare", response_model=CompareResponse)
+async def compare(
+    file_a: UploadFile = File(...),
+    file_b: UploadFile = File(...),
+    question: str = Form(...),
+    scope: str | None = Form(None),
+    top_k: int = Form(4),
+) -> CompareResponse:
+    content_a = await file_a.read()
+    content_b = await file_b.read()
+    answer, sources_a, sources_b = compare_books(
+        file_a.filename,
+        content_a,
+        file_b.filename,
+        content_b,
+        question=question,
+        scope=scope,
+        top_k=top_k,
+    )
+    book_a = [
+        SourceChunk(source=src, title=title, doc_id=doc_id, page=page, content=content)
+        for src, title, doc_id, page, content in sources_a
+    ]
+    book_b = [
+        SourceChunk(source=src, title=title, doc_id=doc_id, page=page, content=content)
+        for src, title, doc_id, page, content in sources_b
+    ]
+    return CompareResponse(answer=answer, book_a=book_a, book_b=book_b)
 
 
 @app.get("/documents", response_model=DocumentListResponse)

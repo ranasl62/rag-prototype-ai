@@ -77,6 +77,18 @@ class SearchResponse(BaseModel):
     chunks: List[SourceChunk]
 
 
+class CompareRequest(BaseModel):
+    question: str = Field(..., min_length=1)
+    scope: Optional[str] = None
+    top_k: Optional[int] = Field(default=None, ge=1, le=20)
+
+
+class CompareResponse(BaseModel):
+    answer: str
+    book_a: List[SourceChunk]
+    book_b: List[SourceChunk]
+
+
 class AgentStep(BaseModel):
     name: str
     detail: str

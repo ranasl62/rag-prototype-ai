@@ -133,6 +133,15 @@ curl -X POST http://localhost:8000/search \
   -d '{"query": "safety requirements", "top_k": 5}'
 ```
 
+### Compare Two Books (no storage)
+```bash
+curl -F "file_a=@/path/to/bookA.pdf" \
+  -F "file_b=@/path/to/bookB.pdf" \
+  -F "question=Compare the safety chapter" \
+  -F "scope=chapter 5" \
+  http://localhost:8000/compare
+```
+
 ### List Documents
 ```bash
 curl http://localhost:8000/documents
